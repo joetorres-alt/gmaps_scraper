@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sales Lead Generator Pro</title>
+<style>
+/* ── Reset & base ───────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:       #0f1117;
+  --surface:  #1a1d27;
+  --border:   #2a2d3a;
+  --accent:   #4f8ef7;
+  --accent2:  #7c3aed;
+  --green:    #22c55e;
+  --yellow:   #f59e0b;
+  --red:      #ef4444;
+  --text:     #e2e8f0;
+  --muted:    #64748b;
+  --radius:   12px;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+       background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* ── Header ─────────────────────────────────────────────────────────────────── */
+header {
+  background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 20px 32px;
+  display: flex; align-items: center; gap: 16px;
+}
+.logo { font-size: 22px; font-weight: 800; letter-spacing: -0.5px;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.logo span { font-weight: 400; color: var(--muted); -webkit-text-fill-color: var(--muted); font-size: 13px; }
+
+/* ── Layout ─────────────────────────────────────────────────────────────────── */
+.layout { display: grid; grid-template-columns: 420px 1fr; min-height: calc(100vh - 65px); }
+.sidebar { background: var(--surface); border-right: 1px solid var(--border);
+           padding: 28px 24px; overflow-y: auto; }
+.main    { padding: 28px 32px; display: flex; flex-direction: column; gap: 24px; }
+
+/* ── Form cards ─────────────────────────────────────────────────────────────── */
+.card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
+        padding: 20px; margin-bottom: 16px; }
+.card-title { font-size: 11px; font-weight: 700; text-transform: uppercase;
+              letter-spacing: 1px; color: var(--accent); margin-bottom: 14px; }
+label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 5px; }
+input[type="text"], input[type="number"], input[type="password"], textarea {
+  width: 100%; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); padding: 9px 12px; font-size: 14px;
+  outline: none; transition: border-color 0.2s;
+}
+input:focus, textarea:focus { border-color: var(--accent); }
+textarea { resize: vertical; min-height: 72px; font-family: inherit; }
+.field { margin-bottom: 12px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* ── Checkboxes ─────────────────────────────────────────────────────────────── */
+.check-group { display: flex; flex-direction: column; gap: 8px; }
+.check-row { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.check-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent);
+                                     cursor: pointer; flex-shrink: 0; }
+.check-row .check-label { font-size: 14px; color: var(--text); }
+.check-row .check-sub   { font-size: 11px; color: var(--muted); margin-left: auto; }
+
+/* ── Toggle ─────────────────────────────────────────────────────────────────── */
+.toggle-wrap { display: flex; align-items: center; justify-content: space-between;
+               margin-bottom: 12px; }
+.toggle-wrap label { font-size: 14px; color: var(--text); margin: 0; }
+.toggle { position: relative; width: 42px; height: 24px; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; inset: 0; background: var(--border); border-radius: 24px;
+          cursor: pointer; transition: 0.2s; }
+.slider::before { content: ""; position: absolute; width: 18px; height: 18px;
+                  left: 3px; bottom: 3px; background: white; border-radius: 50%;
+                  transition: 0.2s; }
+.toggle input:checked + .slider { background: var(--accent); }
+.toggle input:checked + .slider::before { transform: translateX(18px); }
+
+/* ── CRM badges ─────────────────────────────────────────────────────────────── */
+.crm-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.crm-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+           padding: 10px 8px; text-align: center; cursor: pointer; transition: all 0.2s;
+           user-select: none; }
+.crm-btn input { display: none; }
+.crm-btn .crm-name { font-size: 13px; font-weight: 600; }
+.crm-btn .crm-icon { font-size: 20px; margin-bottom: 4px; }
+.crm-btn.selected { border-color: var(--accent); background: rgba(79,142,247,0.1); }
+
+/* ── Launch button ───────────────────────────────────────────────────────────── */
+.btn-launch {
+  width: 100%; padding: 14px; font-size: 16px; font-weight: 700;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: white; border: none; border-radius: var(--radius); cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s; letter-spacing: 0.3px;
+}
+.btn-launch:hover { opacity: 0.9; }
+.btn-launch:active { transform: scale(0.99); }
+.btn-launch:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* ── Progress panel ─────────────────────────────────────────────────────────── */
+.panel { background: var(--surface); border: 1px solid var(--border);
+         border-radius: var(--radius); overflow: hidden; }
+.panel-header { padding: 14px 20px; border-bottom: 1px solid var(--border);
+                font-size: 13px; font-weight: 600; color: var(--muted);
+                display: flex; align-items: center; justify-content: space-between; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.status-dot.running { background: var(--yellow); animation: pulse 1.2s infinite; }
+.status-dot.done    { background: var(--green); animation: none; }
+.status-dot.error   { background: var(--red); animation: none; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+#log {
+  font-family: 'Courier New', monospace; font-size: 12.5px; color: #94a3b8;
+  padding: 16px 20px; height: 320px; overflow-y: auto;
+  background: #0a0c12; line-height: 1.7;
+}
+#log .log-line { white-space: pre-wrap; word-break: break-all; }
+#log .log-line.sep    { color: var(--accent); font-weight: 600; }
+#log .log-line.error  { color: var(--red); }
+#log .log-line.done   { color: var(--green); font-weight: 600; }
+
+/* ── Stats grid ─────────────────────────────────────────────────────────────── */
+#stats-section { display: none; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border);
+             border-radius: var(--radius); padding: 16px; text-align: center; }
+.stat-num { font-size: 32px; font-weight: 800; }
+.stat-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase;
+            letter-spacing: 0.5px; margin-top: 4px; }
+.stat-num.hot  { color: var(--red); }
+.stat-num.warm { color: var(--yellow); }
+.stat-num.cold { color: var(--accent); }
+.stat-num.green { color: var(--green); }
+
+/* ── Download buttons ───────────────────────────────────────────────────────── */
+.downloads { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.dl-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px;
+          border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none;
+          border: 1px solid; transition: all 0.2s; }
+.dl-btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
+.dl-btn.primary:hover { opacity: 0.85; }
+.dl-btn.secondary { background: transparent; color: var(--text); border-color: var(--border); }
+.dl-btn.secondary:hover { border-color: var(--accent); color: var(--accent); }
+.dl-btn.zip { background: linear-gradient(135deg, var(--accent), var(--accent2));
+              color: white; border: none; }
+
+/* ── Idle placeholder ───────────────────────────────────────────────────────── */
+#idle-msg { display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 320px; color: var(--muted); gap: 12px; }
+#idle-msg .idle-icon { font-size: 48px; opacity: 0.3; }
+#idle-msg p { font-size: 14px; }
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">Lead<span style="-webkit-text-fill-color:inherit;color:var(--text);font-weight:800">Gen</span> Pro</div>
+  </div>
+  <div style="margin-left:auto;font-size:12px;color:var(--muted)">Sales Lead Generator</div>
+</header>
+
+<div class="layout">
+
+  <!-- ── Sidebar: Form ──────────────────────────────────────────────────────── -->
+  <aside class="sidebar">
+
+    <!-- Search -->
+    <div class="card">
+      <div class="card-title">Search</div>
+      <div class="field">
+        <label>Keyword</label>
+        <input type="text" id="keyword" placeholder="e.g. plumbers, dentists, coffee shops">
+      </div>
+      <div class="field">
+        <label>Location</label>
+        <input type="text" id="location" placeholder="e.g. Austin TX, Miami FL">
+      </div>
+      <div class="field">
+        <label>Max results per source</label>
+        <input type="number" id="max_results" value="30" min="5" max="200">
+      </div>
+    </div>
+
+    <!-- Sources -->
+    <div class="card">
+      <div class="card-title">Sources</div>
+      <div class="check-group">
+        <label class="check-row">
+          <input type="checkbox" id="src_google" checked>
+          <span class="check-label">Google Maps</span>
+          <span class="check-sub">Most accurate</span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" id="src_yelp" checked>
+          <span class="check-label">Yelp</span>
+          <span class="check-sub">Reviews focused</span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" id="src_yp" checked>
+          <span class="check-label">Yellow Pages</span>
+          <span class="check-sub">Legacy businesses</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Enrichment -->
+    <div class="card">
+      <div class="card-title">Enrichment</div>
+      <div class="check-group">
+        <label class="check-row">
+          <input type="checkbox" id="enrich_social" checked>
+          <span class="check-label">Social media links</span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" id="enrich_tech" checked>
+          <span class="check-label">Tech stack detection</span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" id="enrich_linkedin">
+          <span class="check-label">LinkedIn company search</span>
+          <span class="check-sub">Slower</span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" id="enrich_verify" checked>
+          <span class="check-label">Verify email addresses</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Cold Email -->
+    <div class="card">
+      <div class="card-title">AI Cold Emails</div>
+      <div class="toggle-wrap">
+        <label for="toggle_email">Generate with Claude AI</label>
+        <label class="toggle">
+          <input type="checkbox" id="toggle_email">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div id="email_fields" style="display:none">
+        <div class="field">
+          <label>Your product / service</label>
+          <textarea id="service_desc" placeholder="e.g. We build fast, affordable websites for local businesses — starting at $499."></textarea>
+        </div>
+        <div class="field">
+          <label>Sender name</label>
+          <input type="text" id="sender_name" placeholder="e.g. Alex from WebPro">
+        </div>
+        <div class="field">
+          <label>Anthropic API key</label>
+          <input type="password" id="api_key" placeholder="sk-ant-...">
+        </div>
+      </div>
+    </div>
+
+    <!-- CRM Export -->
+    <div class="card">
+      <div class="card-title">CRM Export</div>
+      <div class="crm-grid">
+        <label class="crm-btn" id="lbl_hubspot">
+          <input type="checkbox" id="crm_hubspot" onchange="toggleCRM('hubspot')">
+          <div class="crm-icon">🟠</div>
+          <div class="crm-name">HubSpot</div>
+        </label>
+        <label class="crm-btn" id="lbl_salesforce">
+          <input type="checkbox" id="crm_salesforce" onchange="toggleCRM('salesforce')">
+          <div class="crm-icon">☁️</div>
+          <div class="crm-name">Salesforce</div>
+        </label>
+        <label class="crm-btn" id="lbl_pipedrive">
+          <input type="checkbox" id="crm_pipedrive" onchange="toggleCRM('pipedrive')">
+          <div class="crm-icon">🟢</div>
+          <div class="crm-name">Pipedrive</div>
+        </label>
+      </div>
+    </div>
+
+    <button class="btn-launch" id="btn_start" onclick="startScrape()">
+      🚀 &nbsp;Start Scraping
+    </button>
+
+  </aside>
+
+  <!-- ── Main: Log + Results ───────────────────────────────────────────────── -->
+  <main class="main">
+
+    <!-- Progress log -->
+    <div class="panel">
+      <div class="panel-header">
+        <span>Live Output</span>
+        <span class="status-dot" id="status_dot"></span>
+      </div>
+      <div id="idle-msg">
+        <div class="idle-icon">🗺️</div>
+        <p>Configure your search and click <strong>Start Scraping</strong></p>
+      </div>
+      <div id="log" style="display:none"></div>
+    </div>
+
+    <!-- Stats + Downloads (shown after done) -->
+    <div id="stats-section">
+      <div class="panel">
+        <div class="panel-header">Results</div>
+        <div style="padding: 20px;">
+          <div class="stats-grid" id="stats-grid"></div>
+          <div style="margin-top:20px;">
+            <div style="font-size:12px;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">Downloads</div>
+            <div class="downloads" id="downloads"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ── Toggle email fields ──────────────────────────────────────────────────────
+document.getElementById('toggle_email').addEventListener('change', function() {
+  document.getElementById('email_fields').style.display = this.checked ? 'block' : 'none';
+});
+
+// ── Toggle CRM button selection ──────────────────────────────────────────────
+function toggleCRM(name) {
+  const lbl = document.getElementById('lbl_' + name);
+  const cb  = document.getElementById('crm_' + name);
+  lbl.classList.toggle('selected', cb.checked);
+}
+
+// ── Start scraping ───────────────────────────────────────────────────────────
+let currentJobId = null;
+
+async function startScrape() {
+  const keyword  = document.getElementById('keyword').value.trim();
+  const location = document.getElementById('location').value.trim();
+
+  if (!keyword || !location) {
+    alert('Please enter both a keyword and a location.');
+    return;
+  }
+
+  const cfg = {
+    keyword,
+    location,
+    max_results:  parseInt(document.getElementById('max_results').value) || 30,
+    google:       document.getElementById('src_google').checked,
+    yelp:         document.getElementById('src_yelp').checked,
+    yellowpages:  document.getElementById('src_yp').checked,
+    social:       document.getElementById('enrich_social').checked,
+    tech:         document.getElementById('enrich_tech').checked,
+    linkedin:     document.getElementById('enrich_linkedin').checked,
+    verify:       document.getElementById('enrich_verify').checked,
+    cold_email:   document.getElementById('toggle_email').checked,
+    service_desc: document.getElementById('service_desc').value.trim(),
+    sender_name:  document.getElementById('sender_name').value.trim(),
+    api_key:      document.getElementById('api_key').value.trim(),
+    hubspot:      document.getElementById('crm_hubspot').checked,
+    salesforce:   document.getElementById('crm_salesforce').checked,
+    pipedrive:    document.getElementById('crm_pipedrive').checked,
+  };
+
+  // Reset UI
+  document.getElementById('btn_start').disabled = true;
+  document.getElementById('btn_start').textContent = '⏳  Running…';
+  document.getElementById('idle-msg').style.display = 'none';
+  document.getElementById('stats-section').style.display = 'none';
+  const logEl = document.getElementById('log');
+  logEl.style.display = 'block';
+  logEl.innerHTML = '';
+  setDot('running');
+
+  // Start job
+  const res = await fetch('/scrape', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(cfg),
+  });
+  const { job_id } = await res.json();
+  currentJobId = job_id;
+
+  // Stream SSE
+  const evtSource = new EventSource(`/stream/${job_id}`);
+  evtSource.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+
+    if (data.type === 'log') {
+      appendLog(data.msg);
+    }
+
+    if (data.type === 'done') {
+      evtSource.close();
+      setDot('done');
+      appendLog('── Done! ──', 'done');
+      showResults(data.stats, data.files, job_id);
+      document.getElementById('btn_start').disabled = false;
+      document.getElementById('btn_start').textContent = '🚀  Start New Search';
+    }
+  };
+
+  evtSource.onerror = () => {
+    evtSource.close();
+    setDot('error');
+    appendLog('Connection lost or job errored.', 'error');
+    document.getElementById('btn_start').disabled = false;
+    document.getElementById('btn_start').textContent = '🚀  Start New Search';
+  };
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function appendLog(msg, cls = '') {
+  const logEl = document.getElementById('log');
+  const line = document.createElement('div');
+  line.className = 'log-line' + (cls ? ' ' + cls : '');
+  if (msg.startsWith('──')) line.classList.add('sep');
+  if (msg.startsWith('ERROR')) line.classList.add('error');
+  line.textContent = msg;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function setDot(state) {
+  const dot = document.getElementById('status_dot');
+  dot.className = 'status-dot ' + state;
+}
+
+function showResults(stats, files, jobId) {
+  const section = document.getElementById('stats-section');
+  section.style.display = 'block';
+
+  const grid = document.getElementById('stats-grid');
+  grid.innerHTML = `
+    <div class="stat-card"><div class="stat-num green">${stats.total||0}</div><div class="stat-lbl">Total Leads</div></div>
+    <div class="stat-card"><div class="stat-num hot">${stats.hot||0}</div><div class="stat-lbl">🔥 Hot</div></div>
+    <div class="stat-card"><div class="stat-num warm">${stats.warm||0}</div><div class="stat-lbl">☀ Warm</div></div>
+    <div class="stat-card"><div class="stat-num cold">${stats.cold||0}</div><div class="stat-lbl">❄ Cold</div></div>
+    <div class="stat-card"><div class="stat-num">${stats.phone||0}</div><div class="stat-lbl">With Phone</div></div>
+    <div class="stat-card"><div class="stat-num">${stats.email||0}</div><div class="stat-lbl">With Email</div></div>
+    <div class="stat-card"><div class="stat-num">${stats.verified||0}</div><div class="stat-lbl">Verified Email</div></div>
+    <div class="stat-card"><div class="stat-num">${stats.linkedin||0}</div><div class="stat-lbl">LinkedIn</div></div>
+    ${stats.emails_written ? `<div class="stat-card"><div class="stat-num green">${stats.emails_written}</div><div class="stat-lbl">Cold Emails</div></div>` : ''}
+  `;
+
+  const dlDiv = document.getElementById('downloads');
+  dlDiv.innerHTML = '';
+
+  const icons = {
+    'leads.csv':           ['📄 CSV', 'primary'],
+    'leads_report.html':   ['📊 HTML Report', 'primary'],
+    'leads_package.zip':   ['📦 Download All (ZIP)', 'zip'],
+    'leads_hubspot.csv':   ['🟠 HubSpot', 'secondary'],
+    'leads_salesforce.csv':['☁️ Salesforce', 'secondary'],
+    'leads_pipedrive.csv': ['🟢 Pipedrive', 'secondary'],
+  };
+
+  // ZIP first
+  if (files.includes('leads_package.zip')) {
+    const a = document.createElement('a');
+    a.href = `/download/${jobId}/leads_package.zip`;
+    a.className = 'dl-btn zip';
+    a.textContent = '📦  Download All (ZIP)';
+    dlDiv.appendChild(a);
+  }
+
+  for (const f of files) {
+    if (f === 'leads_package.zip') continue;
+    const info = icons[f] || [f, 'secondary'];
+    const a = document.createElement('a');
+    a.href = `/download/${jobId}/${f}`;
+    a.className = `dl-btn ${info[1]}`;
+    a.textContent = info[0];
+    dlDiv.appendChild(a);
+  }
+
+  section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+</script>
+</body>
+</html>
