@@ -263,6 +263,50 @@ textarea { resize: vertical; min-height: 72px; font-family: inherit; }
       </div>
     </div>
 
+    <!-- Mailchimp -->
+    <div class="card">
+      <div class="card-title">Mailchimp</div>
+      <div class="toggle-wrap">
+        <label for="toggle_mc">Sync leads to Mailchimp</label>
+        <label class="toggle">
+          <input type="checkbox" id="toggle_mc">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div id="mc_fields" style="display:none">
+        <div class="field">
+          <label>API Key</label>
+          <input type="password" id="mc_key" placeholder="xxxxxxxxxxxxxxxxxxxxxxx-us21">
+        </div>
+        <div class="field" style="display:flex;gap:8px;align-items:flex-end;">
+          <div style="flex:1">
+            <label>Audience</label>
+            <select id="mc_list" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 12px;font-size:14px;outline:none;">
+              <option value="">— enter API key first —</option>
+            </select>
+          </div>
+          <button onclick="loadAudiences()" style="background:var(--accent);color:white;border:none;border-radius:8px;padding:9px 14px;cursor:pointer;font-size:13px;white-space:nowrap;">Load</button>
+        </div>
+        <div class="toggle-wrap" style="margin-top:8px;">
+          <label for="toggle_campaign">Also create email campaign (draft)</label>
+          <label class="toggle">
+            <input type="checkbox" id="toggle_campaign">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div id="campaign_fields" style="display:none">
+          <div class="field">
+            <label>Email subject line</label>
+            <input type="text" id="mc_subject" placeholder="e.g. Quick question about your business">
+          </div>
+          <div class="field">
+            <label>Reply-to email</label>
+            <input type="text" id="mc_reply_to" placeholder="you@yourcompany.com">
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- CRM Export -->
     <div class="card">
       <div class="card-title">CRM Export</div>
@@ -330,6 +374,34 @@ document.getElementById('toggle_email').addEventListener('change', function() {
   document.getElementById('email_fields').style.display = this.checked ? 'block' : 'none';
 });
 
+// ── Toggle Mailchimp fields ───────────────────────────────────────────────────
+document.getElementById('toggle_mc').addEventListener('change', function() {
+  document.getElementById('mc_fields').style.display = this.checked ? 'block' : 'none';
+});
+document.getElementById('toggle_campaign').addEventListener('change', function() {
+  document.getElementById('campaign_fields').style.display = this.checked ? 'block' : 'none';
+});
+
+// ── Load Mailchimp audiences ──────────────────────────────────────────────────
+async function loadAudiences() {
+  const key = document.getElementById('mc_key').value.trim();
+  if (!key) { alert('Enter your Mailchimp API key first.'); return; }
+  const sel = document.getElementById('mc_list');
+  sel.innerHTML = '<option>Loading...</option>';
+  try {
+    const res = await fetch('/mailchimp/audiences', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ api_key: key }),
+    });
+    const data = await res.json();
+    if (data.error) { sel.innerHTML = `<option>${data.error}</option>`; return; }
+    sel.innerHTML = data.audiences.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+  } catch(e) {
+    sel.innerHTML = '<option>Failed to load</option>';
+  }
+}
+
 // ── Toggle CRM button selection ──────────────────────────────────────────────
 function toggleCRM(name) {
   const lbl = document.getElementById('lbl_' + name);
@@ -367,6 +439,11 @@ async function startScrape() {
     hubspot:      document.getElementById('crm_hubspot').checked,
     salesforce:   document.getElementById('crm_salesforce').checked,
     pipedrive:    document.getElementById('crm_pipedrive').checked,
+    mailchimp_key:      document.getElementById('mc_key').value.trim(),
+    mailchimp_list:     document.getElementById('mc_list').value,
+    mailchimp_campaign: document.getElementById('toggle_campaign').checked,
+    mailchimp_subject:  document.getElementById('mc_subject').value.trim(),
+    mailchimp_reply_to: document.getElementById('mc_reply_to').value.trim(),
   };
 
   // Reset UI
@@ -448,6 +525,7 @@ function showResults(stats, files, jobId) {
     <div class="stat-card"><div class="stat-num">${stats.verified||0}</div><div class="stat-lbl">Verified Email</div></div>
     <div class="stat-card"><div class="stat-num">${stats.linkedin||0}</div><div class="stat-lbl">LinkedIn</div></div>
     ${stats.emails_written ? `<div class="stat-card"><div class="stat-num green">${stats.emails_written}</div><div class="stat-lbl">Cold Emails</div></div>` : ''}
+    ${stats.mc_synced ? `<div class="stat-card"><div class="stat-num" style="color:#f59e0b">${stats.mc_synced}</div><div class="stat-lbl">📧 Mailchimp</div></div>` : ''}
   `;
 
   const dlDiv = document.getElementById('downloads');

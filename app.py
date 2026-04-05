@@ -150,6 +150,30 @@ def _run_pipeline(job_id: str, cfg: dict, q: queue.Queue):
             export_pipedrive(all_leads, p)
             files.append(p)
 
+        # ── Mailchimp ─────────────────────────────────────────────────────────
+        mc_synced = 0
+        if cfg.get("mailchimp_key") and cfg.get("mailchimp_list"):
+            from mailchimp import sync_leads, create_campaign, build_campaign_html
+            print("── Syncing to Mailchimp ──")
+            result = sync_leads(all_leads, cfg["mailchimp_key"], cfg["mailchimp_list"], log_fn=print)
+            mc_synced = result["synced"]
+            if cfg.get("mailchimp_campaign") and cfg.get("mailchimp_subject"):
+                print("Creating Mailchimp campaign...")
+                html_body = build_campaign_html(all_leads, cfg["mailchimp_subject"])
+                ok, url = create_campaign(
+                    api_key=cfg["mailchimp_key"],
+                    list_id=cfg["mailchimp_list"],
+                    subject=cfg["mailchimp_subject"],
+                    from_name=cfg.get("sender_name", "Sales Team"),
+                    reply_to=cfg.get("mailchimp_reply_to", ""),
+                    body_html=html_body,
+                    log_fn=print,
+                )
+                if ok:
+                    print(f"Campaign draft ready → {url}")
+                else:
+                    print(f"Campaign error: {url}")
+
         # ── Zip ───────────────────────────────────────────────────────────────
         zip_path = str(output_dir / "leads_package.zip")
         with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -167,6 +191,7 @@ def _run_pipeline(job_id: str, cfg: dict, q: queue.Queue):
             "linkedin": sum(1 for l in all_leads if l.linkedin_url),
             "emails_written": sum(1 for l in all_leads if l.cold_email and not l.cold_email.startswith("[")),
             "hot": hot, "warm": warm, "cold": cold,
+            "mc_synced": mc_synced,
         }
         jobs[job_id]["stats"]  = stats
         jobs[job_id]["files"]  = [Path(f).name for f in files]
@@ -189,6 +214,17 @@ def _run_pipeline(job_id: str, cfg: dict, q: queue.Queue):
 @app.route("/")
 def index():
     return render_template("index.html")
+
+
+@app.route("/mailchimp/audiences", methods=["POST"])
+def mailchimp_audiences():
+    from mailchimp import get_audiences, verify_api_key
+    api_key = request.get_json(force=True).get("api_key", "")
+    ok, msg = verify_api_key(api_key)
+    if not ok:
+        return jsonify({"error": msg})
+    audiences = get_audiences(api_key)
+    return jsonify({"audiences": audiences})
 
 
 @app.route("/scrape", methods=["POST"])
