@@ -307,6 +307,42 @@ textarea { resize: vertical; min-height: 72px; font-family: inherit; }
       </div>
     </div>
 
+    <!-- Google Sheets -->
+    <div class="card">
+      <div class="card-title">Google Sheets</div>
+      <div class="toggle-wrap">
+        <label for="toggle_sheets">Sync leads to Google Sheets</label>
+        <label class="toggle">
+          <input type="checkbox" id="toggle_sheets">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div id="sheets_fields" style="display:none">
+        <div class="field">
+          <label>Service Account JSON key</label>
+          <input type="file" id="sheets_json" accept=".json"
+            style="width:100%;background:var(--surface);border:1px solid var(--border);
+                   border-radius:8px;color:var(--text);padding:9px 12px;font-size:13px;cursor:pointer;">
+        </div>
+        <div class="field">
+          <label>Google Sheet URL</label>
+          <input type="text" id="sheets_url" placeholder="https://docs.google.com/spreadsheets/d/...">
+        </div>
+        <div class="field">
+          <label>Worksheet name</label>
+          <input type="text" id="sheets_tab" placeholder="Leads" value="Leads">
+        </div>
+        <div style="background:rgba(79,142,247,0.08);border:1px solid rgba(79,142,247,0.2);
+                    border-radius:8px;padding:10px 12px;font-size:12px;color:var(--muted);margin-top:4px;">
+          💡 Need a Service Account JSON?
+          <a href="https://console.cloud.google.com" target="_blank"
+             style="color:var(--accent);">Google Cloud Console</a>
+          → New Project → Enable Sheets API → Create Service Account → Download JSON key.
+          Then share your Sheet with the service account email.
+        </div>
+      </div>
+    </div>
+
     <!-- CRM Export -->
     <div class="card">
       <div class="card-title">CRM Export</div>
@@ -374,6 +410,11 @@ document.getElementById('toggle_email').addEventListener('change', function() {
   document.getElementById('email_fields').style.display = this.checked ? 'block' : 'none';
 });
 
+// ── Toggle Google Sheets fields ──────────────────────────────────────────────
+document.getElementById('toggle_sheets').addEventListener('change', function() {
+  document.getElementById('sheets_fields').style.display = this.checked ? 'block' : 'none';
+});
+
 // ── Toggle Mailchimp fields ───────────────────────────────────────────────────
 document.getElementById('toggle_mc').addEventListener('change', function() {
   document.getElementById('mc_fields').style.display = this.checked ? 'block' : 'none';
@@ -412,6 +453,16 @@ function toggleCRM(name) {
 // ── Start scraping ───────────────────────────────────────────────────────────
 let currentJobId = null;
 
+async function readJsonFile(inputEl) {
+  return new Promise((resolve) => {
+    const file = inputEl.files[0];
+    if (!file) { resolve(null); return; }
+    const reader = new FileReader();
+    reader.onload = e => { try { resolve(JSON.parse(e.target.result)); } catch { resolve(null); } };
+    reader.readAsText(file);
+  });
+}
+
 async function startScrape() {
   const keyword  = document.getElementById('keyword').value.trim();
   const location = document.getElementById('location').value.trim();
@@ -420,6 +471,9 @@ async function startScrape() {
     alert('Please enter both a keyword and a location.');
     return;
   }
+
+  // Read Google Sheets JSON key file if provided
+  const sheetsJson = await readJsonFile(document.getElementById('sheets_json'));
 
   const cfg = {
     keyword,
@@ -439,6 +493,10 @@ async function startScrape() {
     hubspot:      document.getElementById('crm_hubspot').checked,
     salesforce:   document.getElementById('crm_salesforce').checked,
     pipedrive:    document.getElementById('crm_pipedrive').checked,
+    sheets_enabled: document.getElementById('toggle_sheets').checked,
+    sheets_json:    sheetsJson,
+    sheets_url:     document.getElementById('sheets_url').value.trim(),
+    sheets_tab:     document.getElementById('sheets_tab').value.trim() || 'Leads',
     mailchimp_key:      document.getElementById('mc_key').value.trim(),
     mailchimp_list:     document.getElementById('mc_list').value,
     mailchimp_campaign: document.getElementById('toggle_campaign').checked,
@@ -526,6 +584,7 @@ function showResults(stats, files, jobId) {
     <div class="stat-card"><div class="stat-num">${stats.linkedin||0}</div><div class="stat-lbl">LinkedIn</div></div>
     ${stats.emails_written ? `<div class="stat-card"><div class="stat-num green">${stats.emails_written}</div><div class="stat-lbl">Cold Emails</div></div>` : ''}
     ${stats.mc_synced ? `<div class="stat-card"><div class="stat-num" style="color:#f59e0b">${stats.mc_synced}</div><div class="stat-lbl">📧 Mailchimp</div></div>` : ''}
+    ${stats.sheets_synced ? `<div class="stat-card"><div class="stat-num" style="color:#22c55e">${stats.sheets_synced}</div><div class="stat-lbl">📊 Sheets</div></div>` : ''}
   `;
 
   const dlDiv = document.getElementById('downloads');

@@ -150,6 +150,20 @@ def _run_pipeline(job_id: str, cfg: dict, q: queue.Queue):
             export_pipedrive(all_leads, p)
             files.append(p)
 
+        # ── Google Sheets ─────────────────────────────────────────────────────
+        sheets_synced = 0
+        if cfg.get("sheets_enabled") and cfg.get("sheets_json") and cfg.get("sheets_url"):
+            from google_sheets import sync_leads as sheets_sync
+            print("── Syncing to Google Sheets ──")
+            result = sheets_sync(
+                all_leads,
+                cfg["sheets_json"],
+                cfg["sheets_url"],
+                cfg.get("sheets_tab", "Leads"),
+                log_fn=print,
+            )
+            sheets_synced = result.get("synced", 0)
+
         # ── Mailchimp ─────────────────────────────────────────────────────────
         mc_synced = 0
         if cfg.get("mailchimp_key") and cfg.get("mailchimp_list"):
@@ -192,6 +206,7 @@ def _run_pipeline(job_id: str, cfg: dict, q: queue.Queue):
             "emails_written": sum(1 for l in all_leads if l.cold_email and not l.cold_email.startswith("[")),
             "hot": hot, "warm": warm, "cold": cold,
             "mc_synced": mc_synced,
+            "sheets_synced": sheets_synced,
         }
         jobs[job_id]["stats"]  = stats
         jobs[job_id]["files"]  = [Path(f).name for f in files]
