@@ -1,5 +1,5 @@
 """
-Sales Lead Generator Pro — Web UI
+Leadgen Pro — Web UI
 Run: python app.py  then open http://localhost:5000
 """
 
@@ -13,6 +13,10 @@ import uuid
 import zipfile
 from datetime import datetime
 from pathlib import Path
+
+# Tell Playwright where browsers are installed on Railway
+if os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
+    os.environ["PLAYWRIGHT_BROWSERS_PATH"] = os.environ["PLAYWRIGHT_BROWSERS_PATH"]
 
 from flask import Flask, Response, jsonify, render_template, request, send_file
 
